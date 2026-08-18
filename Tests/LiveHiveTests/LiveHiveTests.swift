@@ -60,10 +60,11 @@ final class LiveHiveTests: XCTestCase {
     func testConfigurationAcceptsPublicKeyAndNormalizesBaseURL() throws {
         let config = try LiveHiveConfiguration(
             publicKey: "lh_pub_abcdefghijklmnopqrstuv",
-            baseURL: URL(string: "https://api.livehive.dev/v1")!
+            baseURL: URL(string: "https://www.livehive.dev/v1")!
         )
         XCTAssertEqual(config.publicKey, "lh_pub_abcdefghijklmnopqrstuv")
-        XCTAssertEqual(config.registerURL.absoluteString, "https://api.livehive.dev/v1/activities/register")
+        XCTAssertEqual(config.registerURL.absoluteString, "https://www.livehive.dev/v1/activities/register")
+        XCTAssertEqual(LiveHive.defaultBaseURL.absoluteString, "https://www.livehive.dev")
     }
 
     func testConfigureStoresPublicKey() throws {

@@ -4,7 +4,7 @@ Minimal Swift package that registers ActivityKit push tokens with Live Hive.
 
 The SDK does **not** create Live Activities, define `ActivityAttributes`, or send updates. ActivityKit and WidgetKit remain your responsibility. Your backend updates and ends activities over HTTP. There is no server SDK.
 
-Canonical API: `https://api.livehive.dev/v1`
+Canonical API: `https://www.livehive.dev/v1`
 
 ## Install
 
@@ -14,11 +14,11 @@ In Xcode: File → Add Package Dependencies, paste:
 https://github.com/iangdavis/livehive-ios
 ```
 
-Choose version **0.1.0** or later. Add the `LiveHive` library to your app target.
+Choose version **0.1.1** or later. Add the `LiveHive` library to your app target.
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/iangdavis/livehive-ios.git", from: "0.1.0")
+    .package(url: "https://github.com/iangdavis/livehive-ios.git", from: "0.1.1")
 ]
 ```
 
@@ -45,7 +45,7 @@ LiveHive.register(activity)
 `register` observes `activity.pushTokenUpdates`, converts each token to lowercase hex, and POSTs it to:
 
 ```text
-POST https://api.livehive.dev/v1/activities/register
+POST https://www.livehive.dev/v1/activities/register
 Authorization: Bearer lh_pub_...
 ```
 

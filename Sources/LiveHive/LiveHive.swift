@@ -203,7 +203,7 @@ final class LiveHiveRuntime: @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("Bearer \(configuration.publicKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("LiveHive-iOS/0.1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue("LiveHive-iOS/0.1.1", forHTTPHeaderField: "User-Agent")
         request.httpBody = try JSONEncoder().encode(
             RegisterBody(activity_id: activityId, push_token: pushToken, type: type)
         )
@@ -228,12 +228,12 @@ final class LiveHiveRuntime: @unchecked Sendable {
 /// Your backend updates and ends activities over HTTP with a secret `lh_live_` key.
 /// There is no server SDK.
 public enum LiveHive {
-    public static let defaultBaseURL = URL(string: "https://api.livehive.dev")!
+    public static let defaultBaseURL = URL(string: "https://www.livehive.dev")!
 
     /// Configures the SDK with a public project key (`lh_pub_...`).
     ///
     /// Call this once at launch, before `register`.
-    /// Default `baseURL` is `https://api.livehive.dev`. Override only for local development.
+    /// Default `baseURL` is `https://www.livehive.dev`. Override only for local development.
     /// Never pass a server API key (`lh_live_...`).
     public static func configure(publicKey: String, baseURL: URL = defaultBaseURL) {
         do {
