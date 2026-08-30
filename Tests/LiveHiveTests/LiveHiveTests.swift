@@ -156,4 +156,24 @@ final class LiveHiveTests: XCTestCase {
         XCTAssertFalse(LiveHiveRuntime.shouldRetry(status: 401))
         XCTAssertFalse(LiveHiveRuntime.shouldRetry(status: 403))
     }
+
+    func testLiveActivitiesPlistHelper() {
+        XCTAssertTrue(LiveActivitiesPlist.isEnabled(true))
+        XCTAssertTrue(LiveActivitiesPlist.isEnabled(NSNumber(value: true)))
+        XCTAssertTrue(LiveActivitiesPlist.isEnabled("YES"))
+        XCTAssertTrue(LiveActivitiesPlist.isEnabled("true"))
+        XCTAssertTrue(LiveActivitiesPlist.isEnabled("1"))
+        XCTAssertFalse(LiveActivitiesPlist.isEnabled(false))
+        XCTAssertFalse(LiveActivitiesPlist.isEnabled(nil))
+        XCTAssertFalse(LiveActivitiesPlist.isEnabled("NO"))
+    }
+
+    func testSDKVersionIsInUserAgent() async throws {
+        let config = try LiveHiveConfiguration(publicKey: "lh_pub_abcdefghijklmnopqrstuv")
+        runtime.configure(config)
+        try await runtime.register(activityId: "ua-1", pushToken: "aa".padding(toLength: 16, withPad: "a", startingAt: 0), type: nil)
+        let request = try XCTUnwrap(transport.requests.first)
+        XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "LiveHive-iOS/\(LiveHive.version)")
+        XCTAssertEqual(LiveHive.version, "0.2.0")
+    }
 }
