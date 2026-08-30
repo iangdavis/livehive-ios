@@ -44,6 +44,22 @@ public struct LiveHiveConfiguration: Equatable, Sendable {
     }
 }
 
+enum LiveActivitiesPlist {
+    static func isEnabled(_ value: Any?) -> Bool {
+        if let flag = value as? Bool { return flag }
+        if let number = value as? NSNumber { return number.boolValue }
+        if let string = value as? String {
+            switch string.lowercased() {
+            case "1", "true", "yes":
+                return true
+            default:
+                return false
+            }
+        }
+        return false
+    }
+}
+
 public enum LiveHiveError: Error, Equatable, Sendable {
     case notConfigured
     case invalidPublicKey
@@ -51,13 +67,15 @@ public enum LiveHiveError: Error, Equatable, Sendable {
     case invalidResponse
     case httpStatus(Int)
     case retryLimitExceeded(Int)
+    case liveActivitiesPlistMissing
+    case liveActivitiesDisabled
 }
 
 extension LiveHiveError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .notConfigured:
-            return "Call LiveHive.configure(publicKey:) before register(_:)."
+            return "Call LiveHive.configure(publicKey:) before start() or register(_:)."
         case .invalidPublicKey:
             return "LiveHive.configure requires a public key starting with lh_pub_."
         case .secretKeyRejected:
@@ -68,6 +86,10 @@ extension LiveHiveError: LocalizedError {
             return "Live Hive registration failed (\(status))."
         case .retryLimitExceeded(let status):
             return "Live Hive registration failed after retries (\(status))."
+        case .liveActivitiesPlistMissing:
+            return "Set NSSupportsLiveActivities = YES on the app target (Build Settings if the Info tab looks like macOS)."
+        case .liveActivitiesDisabled:
+            return "Live Activities are disabled for this app. Enable them in Settings."
         }
     }
 }
@@ -203,7 +225,7 @@ final class LiveHiveRuntime: @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("Bearer \(configuration.publicKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("LiveHive-iOS/0.1.1", forHTTPHeaderField: "User-Agent")
+        request.setValue("LiveHive-iOS/\(LiveHive.version)", forHTTPHeaderField: "User-Agent")
         request.httpBody = try JSONEncoder().encode(
             RegisterBody(activity_id: activityId, push_token: pushToken, type: type)
         )
@@ -222,17 +244,17 @@ final class LiveHiveRuntime: @unchecked Sendable {
     }
 }
 
-/// Minimal iOS SDK for registering ActivityKit push tokens with Live Hive.
+/// iOS SDK: start a Live Activity and register its push token with Live Hive.
 ///
-/// The SDK does not create Live Activities, define attributes, or send updates.
-/// Your backend updates and ends activities over HTTP with a secret `lh_live_` key.
-/// There is no server SDK.
+/// Does not update or end activities. Send a test update from the dashboard, or
+/// POST HTTP from your backend with a secret `lh_live_` key. There is no server SDK.
 public enum LiveHive {
+    public static let version = "0.2.0"
     public static let defaultBaseURL = URL(string: "https://www.livehive.dev")!
 
     /// Configures the SDK with a public project key (`lh_pub_...`).
     ///
-    /// Call this once at launch, before `register`.
+    /// Call this once at launch, before `start` or `register`.
     /// Default `baseURL` is `https://www.livehive.dev`. Override only for local development.
     /// Never pass a server API key (`lh_live_...`).
     public static func configure(publicKey: String, baseURL: URL = defaultBaseURL) {
@@ -245,7 +267,7 @@ public enum LiveHive {
         }
     }
 
-    /// Registers token updates for an activity ID. Prefer `register(_:)` on iOS.
+    /// Registers token updates for an activity ID. Prefer `start()` or `register(_:)` on iOS.
     @discardableResult
     public static func register(
         activityId: String,
@@ -265,10 +287,48 @@ import ActivityKit
 
 @available(iOS 16.1, *)
 public extension LiveHive {
+    /// `Activity.request(..., pushType: .token)` plus `register`.
+    ///
+    /// Does not update or end the Live Activity. First update: dashboard test
+    /// button, or HTTP with `lh_live_`.
+    @discardableResult
+    static func start(
+        status: String = "preparing",
+        eta: Int = 12,
+        type: String = "delivery",
+        activityId: String? = nil
+    ) throws -> Activity<DeliveryAttributes> {
+        try start(
+            attributes: DeliveryAttributes(),
+            contentState: DeliveryAttributes.ContentState(status: status, eta: eta),
+            activityId: activityId,
+            type: type
+        )
+    }
+
+    /// Same as `start(status:eta:)` for a custom `ActivityAttributes` type.
+    @discardableResult
+    static func start<Attributes: ActivityAttributes>(
+        attributes: Attributes,
+        contentState: Attributes.ContentState,
+        activityId: String? = nil,
+        type: String? = nil
+    ) throws -> Activity<Attributes> {
+        try assertReadyToStart()
+        let activity = try Activity.request(
+            attributes: attributes,
+            content: .init(state: contentState, staleDate: nil),
+            pushType: .token
+        )
+        register(activity, activityId: activityId, type: type)
+        return activity
+    }
+
     /// Observes `activity.pushTokenUpdates` and POSTs each token to
     /// `POST /v1/activities/register`.
     ///
-    /// Does not create, update, or end the Live Activity. Call `Activity.request(..., pushType: .token)` first.
+    /// Does not create, update, or end the Live Activity. Prefer `start()` unless
+    /// you already called `Activity.request(..., pushType: .token)`.
     @discardableResult
     static func register<Attributes: ActivityAttributes>(
         _ activity: Activity<Attributes>,
@@ -288,6 +348,19 @@ public extension LiveHive {
             }
         }
         return register(activityId: id, type: type, tokenUpdates: stream)
+    }
+
+    static func assertReadyToStart(bundle: Bundle = .main) throws {
+        if LiveHiveRuntime.shared.currentConfiguration() == nil {
+            throw LiveHiveError.notConfigured
+        }
+        let plist = bundle.object(forInfoDictionaryKey: "NSSupportsLiveActivities")
+        if !LiveActivitiesPlist.isEnabled(plist) {
+            throw LiveHiveError.liveActivitiesPlistMissing
+        }
+        if !ActivityAuthorizationInfo().areActivitiesEnabled {
+            throw LiveHiveError.liveActivitiesDisabled
+        }
     }
 }
 #endif
