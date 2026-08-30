@@ -1,0 +1,84 @@
+{
+  "name": "LiveHive",
+  "overview": "Official package collection for the LiveHive iOS SDK.",
+  "keywords": [
+    "Live Activities",
+    "ActivityKit",
+    "iOS",
+    "Swift"
+  ],
+  "formatVersion": "1.0",
+  "generatedAt": "2026-08-30T00:00:00Z",
+  "generatedBy": {
+    "name": "LiveHive"
+  },
+  "packages": [
+    {
+      "url": "https://github.com/iangdavis/livehive-ios.git",
+      "summary": "The Live Hive iOS SDK for starting Live Activities and registering push tokens.",
+      "keywords": [
+        "Live Activities",
+        "ActivityKit",
+        "push tokens",
+        "iOS"
+      ],
+      "readmeURL": "https://github.com/iangdavis/livehive-ios/blob/main/README.md",
+      "license": {
+        "name": "MIT",
+        "url": "https://github.com/iangdavis/livehive-ios/blob/main/LICENSE"
+      },
+      "versions": [
+        {
+          "version": "0.2.0",
+          "summary": "Register Live Activity push tokens with Live Hive.",
+          "defaultToolsVersion": "5.9",
+          "manifests": {
+            "5.9": {
+              "toolsVersion": "5.9",
+              "packageName": "LiveHive",
+              "targets": [
+                {
+                  "name": "LiveHive",
+                  "moduleName": "LiveHive"
+                },
+                {
+                  "name": "LiveHiveTests"
+                }
+              ],
+              "products": [
+                {
+                  "name": "LiveHive",
+                  "type": {
+                    "library": [
+                      "automatic"
+                    ]
+                  },
+                  "targets": [
+                    "LiveHive"
+                  ]
+                }
+              ],
+              "minimumPlatformVersions": [
+                {
+                  "name": "iOS",
+                  "version": "16.1"
+                },
+                {
+                  "name": "macOS",
+                  "version": "13.0"
+                }
+              ]
+            }
+          },
+          "license": {
+            "name": "MIT",
+            "url": "https://github.com/iangdavis/livehive-ios/blob/main/LICENSE"
+          },
+          "author": {
+            "name": "Ian Davis"
+          }
+        }
+      ]
+    }
+  ]
+}
